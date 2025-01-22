@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Huffman Encoding Frequency Counter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    #inputText {
+      width: 100%;
+      height: 100px;
+    }
+    .result {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Huffman Encoding Frequency Counter</h1>
+  
+  <label for="inputText">Enter Text:</label>
+  <textarea id="inputText" placeholder="Enter your text here..."></textarea>
+  <br><br>
+  <button onclick="generateHuffman()">Generate Frequency and Huffman Encoding</button>
+
+  <div class="result" id="result">
+    <h2>Results:</h2>
+    <p><strong>Character Frequencies:</strong></p>
+    <pre id="frequencyResult"></pre>
+    <p><strong>Character Probabilities:</strong></p>
+    <pre id="probabilityResult"></pre> <!-- Added Probability Result -->
+    <p><strong>Huffman Codes:</strong></p>
+    <pre id="huffmanResult"></pre>
+    <p><strong>Point-of-Presence:</strong></p>
+    <pre id="popResult"></pre>
+  </div>
+
+  <script>
+    // Function to count character frequencies
+    function countFrequencies(text) {
+      const freqMap = {};
+      for (let char of text) {
+        freqMap[char] = (freqMap[char] || 0) + 1;
+      }
+      return freqMap;
+    }
+
+    // Function to calculate the probabilities
+    function calculateProbabilities(freqMap, totalChars) {
+      const probMap = {};
+      for (const [char, freq] of Object.entries(freqMap)) {
+        probMap[char] = (freq / totalChars).toFixed(4); // Probability with 4 decimal places
+      }
+      return probMap;
+    }
+
+    // Function to generate Huffman Tree
+    function generateHuffmanTree(freqMap) {
+      const heap = Object.entries(freqMap).map(([char, freq]) => ({ char, freq }));
+      heap.sort((a, b) => a.freq - b.freq);
+
+      while (heap.length > 1) {
+        // Take two smallest nodes
+        const left = heap.shift();
+        const right = heap.shift();
+
+        // Create a new node
+        const newNode = {
+          char: left.char + right.char,
+          freq: left.freq + right.freq,
+          left,
+          right
+        };
+
+        // Insert new node back into the heap
+        heap.push(newNode);
+        heap.sort((a, b) => a.freq - b.freq);
+      }
+
+      return heap[0]; // The root of the Huffman tree
+    }
+
+    // Function to generate the Huffman code
+    function generateCodes(node, prefix = '', codes = {}) {
+      if (node.char.length === 1) {
+        codes[node.char] = prefix;
+      } else {
+        generateCodes(node.left, prefix + '0', codes);
+        generateCodes(node.right, prefix + '1', codes);
+      }
+      return codes;
+    }
+
+    // Function to calculate the "Point-of-Presence" (PoP)
+    function calculatePoP(freqMap) {
+      let maxChar = '';
+      let maxFreq = 0;
+      
+      for (const [char, freq] of Object.entries(freqMap)) {
+        if (freq > maxFreq) {
+          maxChar = char;
+          maxFreq = freq;
+        }
+      }
+
+      return { char: maxChar, freq: maxFreq };
+    }
+
+    // Main function to process the input and show results
+    function generateHuffman() {
+      const text = document.getElementById('inputText').value;
+      if (!text) {
+        alert('Please enter some text');
+        return;
+      }
+
+      // Step 1: Count frequencies
+      const freqMap = countFrequencies(text);
+      document.getElementById('frequencyResult').textContent = JSON.stringify(freqMap, null, 2);
+
+      // Step 2: Calculate Probabilities
+      const totalChars = text.length; // Total number of characters
+      const probMap = calculateProbabilities(freqMap, totalChars);
+      document.getElementById('probabilityResult').textContent = JSON.stringify(probMap, null, 2);
+
+      // Step 3: Calculate PoP (Point-of-Presence)
+      const pop = calculatePoP(freqMap);
+      document.getElementById('popResult').textContent = `Character: ${pop.char}, Frequency: ${pop.freq}`;
+
+      // Step 4: Generate Huffman Tree
+      const huffmanTree = generateHuffmanTree(freqMap);
+
+      // Step 5: Generate Huffman codes
+      const huffmanCodes = generateCodes(huffmanTree);
+      document.getElementById('huffmanResult').textContent = JSON.stringify(huffmanCodes, null, 2);
+    }
+  </script>
+</body>
+</html>
